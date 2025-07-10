@@ -15,7 +15,7 @@ public class Quiz : MonoBehaviour
 
     [Header("Answer Buttons")]
     [SerializeField] GameObject[] answerButtons;
-    bool hasAnsweredEarly;
+    bool hasAnsweredEarly =true;
     int correctAnswerIndex;
     [Header("Button Sprites")]
     [SerializeField] Sprite defaultButtonSprite;
@@ -24,15 +24,33 @@ public class Quiz : MonoBehaviour
     [Header("Timer")]
     [SerializeField] Image timerImage;
     Timer timer;
-    void Start()
+
+    [Header("Scorekeeper")]
+    [SerializeField] TextMeshProUGUI scoreText;
+    Scorekeeper scorekeeper;
+
+    [Header("ProgressBar")]
+    [SerializeField] Slider progressBar;
+
+    public bool isCompleted;
+    void Awake()
     {
         timer = FindAnyObjectByType<Timer>();
+        scorekeeper = FindAnyObjectByType<Scorekeeper>();
+        progressBar.maxValue = questions.Count;
+        progressBar.value = 0;
     }
     void Update()
     {
         timerImage.fillAmount = timer.fillFraction;
         if (timer.loadNextQuestion)
         {
+             if (progressBar.value == progressBar.maxValue)
+            {
+            isCompleted = true;
+            
+            return;
+            }
             GetNextQuestion();
             timer.loadNextQuestion = false;
         }
@@ -48,16 +66,19 @@ public class Quiz : MonoBehaviour
         DisplayAnswer(index);
         SetButtonState(false);
         timer.cancelTimer();
+        scoreText.text = "Score:" + scorekeeper.CalculateScoure() + "%";
+       
     }
     void DisplayAnswer(int index)
     {
         Image buttonImage;
 
-         if (index == currentQuestion.GetCorrectAnswerIndex())
+        if (index == currentQuestion.GetCorrectAnswerIndex())
         {
             questionText.text = "Correct!";
             buttonImage = answerButtons[index].GetComponent<Image>();
             buttonImage.sprite = correctButtonSprite;
+            scorekeeper.IncrementCorrectAnswers();
         }
         else
         {
@@ -67,6 +88,7 @@ public class Quiz : MonoBehaviour
             questionText.text = "Wrong! Correct answer is: " + correctAnswer;
             buttonImage = answerButtons[correctAnswerIndex].GetComponent<Image>();
             buttonImage.sprite = correctButtonSprite;
+
 
         }
     }
@@ -79,6 +101,8 @@ public class Quiz : MonoBehaviour
             DisplayQuestion();
             SetDefaultButtonSprite();
             SetButtonState(true);
+            progressBar.value++;
+            scorekeeper.IncrementQuestionSeen();
         }
        
     }
